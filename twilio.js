@@ -1,7 +1,8 @@
 require('dotenv').config()
-var client = require('twilio')(process.env.TWILIO_TEST_SID, process.env.TWILIO_TEST_TOKEN);
+var client = require('twilio')(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 
-module.exports.sendSms = (to, message) => {
+module.exports.notify = (to, message, callback) => {
+    callback = callback || function(){};
     client.messages.create({
         body: message,
         to: to,
@@ -11,7 +12,7 @@ module.exports.sendSms = (to, message) => {
             console.error('Could not notify administrator');
             console.error(err);
         } else {
-            console.log('Administrator notified');
+            callback(data)
         }
     });
 };

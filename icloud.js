@@ -7,12 +7,12 @@ var password = process.env.ICLOUD_PASS;
 var iCloud = new somebodyElsesComputer(email, password);
 var noop = ()=>{};
 
-module.exports.notifyIcloud = (deviceID, message, callback) => {
+module.exports.notify = (deviceID, message, callback) => {
     callback = callback || noop;
     iCloud.getDevices((err, devices) => {
         if (err){
             return console.error('Error',err);
-            throw err;
+            // throw err;
         }
         if (devices.length === 0) {
             return console.log("No devices found!");

@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-module.exports.notifyIFTT = (eta) => {
+module.exports.notify = (eta) => {
     let etaObject = {
         value1: eta
     };

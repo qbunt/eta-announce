@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm start main.js 3000",
-    "watch": "nodemon start main.js 3000"
+    "start": "node main.js 3000",
+    "watch": "nodemon main.js 3000"
   },
   "author": "qbunt",
   "license": "MIT",

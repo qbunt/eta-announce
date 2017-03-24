@@ -3,6 +3,7 @@ var moment = require('moment');
 var request = require('request');
 var icloud = require('./icloud');
 var ifttt = require('./ifttt');
+var twilio = require('./twilio');
 require('dotenv').config();
 
 var googleMapsClient = require('@google/maps').createClient({key: process.env.API_KEY});
@@ -39,12 +40,12 @@ var requestETA = (from, to, res) => {
             var etaResponse = response.json.rows[0].elements[0].duration_in_traffic.value;
             // add the value (in seconds) to current time, format to localized time
             var etaFormatted = moment().add(etaResponse, 'seconds').format('LT');
-            ifttt.notifyIFTT(composeMessage(etaFormatted));
-
-            icloud.notifyIcloud(process.env.ICLOUD_DEVICE_ID, composeMessage(etaFormatted), (device)=>{
-                console.log(`notified device ${device}`);
-            })
-            res.send(JSON.stringify(etaFormatted));
+            var msg = composeMessage(etaFormatted)
+            // ifttt.notify(msg);
+            // icloud.notify(process.env.ICLOUD_DEVICE_ID, msg)
+            twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, msg, (data)=>{
+                res.send('notification completed');
+            });
         }
     })
 }
