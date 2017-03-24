@@ -1,13 +1,15 @@
 {
   "name": "eta-announce",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm start main.js 3000",
+    "watch": "nodemon start main.js 3000"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "qbunt",
+  "license": "MIT",
   "dependencies": {
     "@google/maps": "^0.3.1",
     "body-parser": "^1.17.1",

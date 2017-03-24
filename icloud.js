@@ -1,13 +1,15 @@
 require('dotenv').config();
-var ICloud = require("find-apple-device");
+var somebodyElsesComputer = require("find-apple-device");
 
 var email = process.env.ICLOUD_USER;
 var password = process.env.ICLOUD_PASS;
 
-var iCloud = new ICloud(email, password);
+var iCloud = new somebodyElsesComputer(email, password);
+var noop = ()=>{};
 
-module.exports.notifyIcloud = (deviceID, callback) => {
-    iCloud.getDevices(function(err, devices) {
+module.exports.notifyIcloud = (deviceID, message, callback) => {
+    callback = callback || noop;
+    iCloud.getDevices((err, devices) => {
         if (err){
             return console.error('Error',err);
             throw err;
@@ -15,7 +17,7 @@ module.exports.notifyIcloud = (deviceID, callback) => {
         if (devices.length === 0) {
             return console.log("No devices found!");
         }
-        iCloud.alertDevice(deviceID, "This is a test alert!", function(err) {
+        iCloud.alertDevice(deviceID, message, function(err) {
             if (err) {
                 return console.error(err);
             }
