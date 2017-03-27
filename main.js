@@ -2,6 +2,8 @@
 
 var moment = require('moment');
 var request = require('request');
+
+const notifier = require('node-notifier')
 // notifiers
 var icloud = require('./icloud');
 var ifttt = require('./ifttt');
@@ -39,8 +41,8 @@ var requestAndNotifyETA = (from, to) => {
 
                 }).then(message => {
                     console.log(`message is:: '${message}'`)
-                    twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
-                    console.log(`twilio notified...`)
+                    // twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
+                    // console.log(`twilio notified...`)
                     return message
                 // }).then(message=>{
                 //     icloud.notify(process.env.ICLOUD_DEVICE_ID, message)
@@ -48,9 +50,9 @@ var requestAndNotifyETA = (from, to) => {
                 }).then(etaResponse).then(response=>{
                     ifttt.notify(response)
                     console.log(`IFTTT notified...`)
-                }).then(() => {
-                    console.log('promise stack cleared, resolving...')
-                    resolve('message successful');
+                    return response
+                }).then((response) => {
+                    resolve(response);
                 }).catch(err => {
                     reject(err)
                 })
@@ -73,18 +75,20 @@ if(program.direction){
 
     if( program.direction == 'home'){
         from = work, to = home;
+        console.log('work -> home')
     } else if( program.direction == 'work'){
         from = home, to = work;
+        console.log('home -> work')
     } else {
         console.log('not a valid destination')
     }
 
     requestAndNotifyETA(from, to).then(response=>{
-        console.log(`${new Date()}::response sent, ETA process complete`)
-        // res.send(response)
+        console.log(`Response sent, ETA process complete ::: ${new Date()}`)
+        notifier.notify(response);
     }).catch(err=> {
         console.error(err)
-        // res.send(`There has been an error::${err}`)
+        notifier.notify(err);
     });
 }
 
