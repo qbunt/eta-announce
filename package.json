@@ -2,12 +2,16 @@
   "name": "eta-announce",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
+  "bin": {
+    "eta": "./main.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node main.js 3000",
     "watch": "nodemon main.js 3000"
   },
+
   "author": "qbunt",
   "license": "MIT",
   "dependencies": {

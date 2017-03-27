@@ -1,4 +1,5 @@
-var express = require('express');
+#!/usr/bin/env node
+
 var moment = require('moment');
 var request = require('request');
 // notifiers
@@ -8,28 +9,6 @@ var twilio = require('./twilio');
 require('dotenv').config();
 
 var googleMapsClient = require('@google/maps').createClient({key: process.env.API_KEY});
-var app = express();
-
-app.get('/to/:destination', (req, res) => {
-    let home = process.env.HOME_ADDRESS;
-    let work = process.env.WORK_ADDRESS;
-
-    if( req.params.destination == 'home'){
-        from = work, to = home;
-    } else if( req.params.destination){
-        from = home, to = work;
-    } else {
-        res.send('not a valid destination')
-    }
-
-    requestAndNotifyETA(from, to).then(response=>{
-        console.log(`${new Date()}::response sent, ETA process complete`)
-        res.send(response)
-    }).catch(err=> {
-        console.error(err)
-        res.send(`There has been an error::${err}`)
-    });
-})
 
 // combined into both directions of travel
 var baseParams = {
@@ -80,4 +59,32 @@ var requestAndNotifyETA = (from, to) => {
     })
 }
 
-app.listen(process.argv[2])
+var program = require('commander');
+program
+    .version('0.1')
+    .description('a CLI for announcing ETA to your loved one')
+    .option('-d, --direction <destination>', 'The direction you intend to travel in')
+    .parse(process.argv);
+
+if(program.direction){
+    let home = process.env.HOME_ADDRESS;
+    let work = process.env.WORK_ADDRESS;
+    var from, to;
+
+    if( program.direction == 'home'){
+        from = work, to = home;
+    } else if( program.direction == 'work'){
+        from = home, to = work;
+    } else {
+        console.log('not a valid destination')
+    }
+
+    requestAndNotifyETA(from, to).then(response=>{
+        console.log(`${new Date()}::response sent, ETA process complete`)
+        // res.send(response)
+    }).catch(err=> {
+        console.error(err)
+        // res.send(`There has been an error::${err}`)
+    });
+}
+
