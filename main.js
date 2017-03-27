@@ -1,6 +1,7 @@
 var express = require('express');
 var moment = require('moment');
 var request = require('request');
+// notifiers
 var icloud = require('./icloud');
 var ifttt = require('./ifttt');
 var twilio = require('./twilio');
@@ -26,7 +27,7 @@ var baseParams = {
     traffic_model: 'best_guess'
 }
 
-var composeMessage = eta => process.env.MESSAGE.replace('{{ETA}}', eta);
+var composeMessage = eta => process.env.MESSAGE.replace('{{ETA}}', eta).replace('{{NAME}}', process.env.NAME);
 
 var requestETA = (from, to, res) => {
     baseParams.origins = [from];
@@ -37,15 +38,31 @@ var requestETA = (from, to, res) => {
             console.error(err)
             res.send(err)
         }else{
-            var etaResponse = response.json.rows[0].elements[0].duration_in_traffic.value;
-            // add the value (in seconds) to current time, format to localized time
-            var etaFormatted = moment().add(etaResponse, 'seconds').format('LT');
-            var msg = composeMessage(etaFormatted)
-            // ifttt.notify(msg);
-            // icloud.notify(process.env.ICLOUD_DEVICE_ID, msg)
-            twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, msg, (data)=>{
-                res.send('notification completed');
-            });
+            var etaResponse = Promise.resolve(response.json.rows[0].elements[0].duration_in_traffic.value);
+            etaResponse.then(composedResponse => {
+                    // add the value (in seconds) to current time, format to localized time
+                    return moment().add(composedResponse, 'seconds').format('LT');
+                }).then(composedMessage=>{
+                    console.log('composing message...')
+                    return composeMessage(composedMessage);
+
+                }).then(message => {
+                    console.log(`message is:: '${message}'`)
+                    twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
+                    console.log(`twilio notified...`)
+                    return message
+                }).then(etaResponse)
+                .then(response=>{
+                    ifttt.notify(response)
+                })
+                .then(response => {
+                    console.log(response)
+                    res.send('message successful')
+                }).catch(err => {
+
+                    console.error(err)
+
+                })
         }
     })
 }

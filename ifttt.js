@@ -1,19 +1,24 @@
 require('dotenv').config();
+var request = require('request');
 
 module.exports.notify = (eta) => {
     let etaObject = {
         value1: eta
     };
-    request({
-        url: process.env.IFTTT_POST_URL,
-        method: "POST",
-        json: true,
-        body: etaObject
-    }, (error, response, body) =>{
-        if(error){
-            console.error(error)
-        } else {
-            console.log(response);
-        }
-    });
+    return new Promise((resolve, reject)=>{
+        request({
+            url: process.env.IFTTT_POST_URL,
+            method: "POST",
+            json: true,
+            body: etaObject
+        }, (err, response, body) =>{
+            if(err){
+                console.error(err);
+                reject(err);
+            } else {
+                console.log(response);
+                resolve(response)
+            }
+        });
+    })
 }
