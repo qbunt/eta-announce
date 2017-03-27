@@ -13,11 +13,22 @@ var app = express();
 app.get('/to/:destination', (req, res) => {
     let home = process.env.HOME_ADDRESS;
     let work = process.env.WORK_ADDRESS;
-    if(req.params.destination == 'home'){
-        requestETA(work, home, res)
-    } else if(req.params.destination == 'work'){
-        requestETA(home, work, res)
+
+    if( req.params.destination == 'home'){
+        from = work, to = home;
+    } else if( req.params.destination){
+        from = home, to = work;
+    } else {
+        res.send('not a valid destination')
     }
+
+    requestAndNotifyETA(from, to).then(response=>{
+        console.log(`${new Date()}::response sent, ETA process complete`)
+        res.send(response)
+    }).catch(err=> {
+        console.error(err)
+        res.send(`There has been an error::${err}`)
+    });
 })
 
 // combined into both directions of travel
@@ -29,17 +40,18 @@ var baseParams = {
 
 var composeMessage = eta => process.env.MESSAGE.replace('{{ETA}}', eta).replace('{{NAME}}', process.env.NAME);
 
-var requestETA = (from, to, res) => {
+var requestAndNotifyETA = (from, to) => {
     baseParams.origins = [from];
     baseParams.destinations = [to];
 
-    googleMapsClient.distanceMatrix(baseParams, (err, response) => {
-        if(err){
-            console.error(err)
-            res.send(err)
-        }else{
-            var etaResponse = Promise.resolve(response.json.rows[0].elements[0].duration_in_traffic.value);
-            etaResponse.then(composedResponse => {
+    return new Promise((resolve, reject) =>{
+        googleMapsClient.distanceMatrix(baseParams, (err, response) => {
+            if(err){
+                console.error(err)
+                reject(err);
+            } else {
+                var etaResponse = Promise.resolve(response.json.rows[0].elements[0].duration_in_traffic.value);
+                etaResponse.then(composedResponse => {
                     // add the value (in seconds) to current time, format to localized time
                     return moment().add(composedResponse, 'seconds').format('LT');
                 }).then(composedMessage=>{
@@ -51,19 +63,20 @@ var requestETA = (from, to, res) => {
                     twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
                     console.log(`twilio notified...`)
                     return message
-                }).then(etaResponse)
-                .then(response=>{
+                // }).then(message=>{
+                //     icloud.notify(process.env.ICLOUD_DEVICE_ID, message)
+                //     console.log(`icloud notified...`)
+                }).then(etaResponse).then(response=>{
                     ifttt.notify(response)
-                })
-                .then(response => {
-                    console.log(response)
-                    res.send('message successful')
+                    console.log(`IFTTT notified...`)
+                }).then(() => {
+                    console.log('promise stack cleared, resolving...')
+                    resolve('message successful');
                 }).catch(err => {
-
-                    console.error(err)
-
+                    reject(err)
                 })
-        }
+            }
+        })
     })
 }
 
