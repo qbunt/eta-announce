@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 var moment = require('moment');
 var request = require('request');
 
@@ -38,16 +37,15 @@ var requestAndNotifyETA = (from, to) => {
                 }).then(composedMessage=>{
                     console.log('composing message...')
                     return composeMessage(composedMessage);
-
                 }).then(message => {
-                    console.log(`message is:: '${message}'`)
-                    // twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
-                    // console.log(`twilio notified...`)
+                    twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
+                    console.log(`twilio notified...`)
                     return message
                 // }).then(message=>{
                 //     icloud.notify(process.env.ICLOUD_DEVICE_ID, message)
                 //     console.log(`icloud notified...`)
                 }).then(etaResponse).then(response=>{
+                    console.log(`message is:: '${response}'`)
                     ifttt.notify(response)
                     console.log(`IFTTT notified...`)
                     return response
@@ -84,7 +82,7 @@ if(program.direction){
     }
 
     requestAndNotifyETA(from, to).then(response=>{
-        console.log(`Response sent, ETA process complete ::: ${new Date()}`)
+        console.log(`Response sent, ETA process complete ::: ${new Date()}a`)
         notifier.notify(response);
     }).catch(err=> {
         console.error(err)
