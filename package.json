@@ -22,7 +22,6 @@
     "express": "^4.15.2",
     "find-apple-device": "^1.0.0",
     "moment": "^2.18.1",
-    "node-notifier": "^5.1.2",
     "request": "^2.81.0",
     "twilio": "^2.11.1"
   }

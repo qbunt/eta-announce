@@ -9,7 +9,6 @@ const app = express();
 // const icloud = require('./icloud');
 const ifttt = require('./ifttt');
 const twilio = require('./twilio');
-const notifier = require('node-notifier')
 require('dotenv').config();
 
 
