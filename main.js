@@ -1,92 +1,103 @@
 #!/usr/bin/env node
-var moment = require('moment');
-var request = require('request');
+const moment = require('moment');
+const request = require('request');
 
-const notifier = require('node-notifier')
+const express = require('express')
+const app = express();
+
 // notifiers
-var icloud = require('./icloud');
-var ifttt = require('./ifttt');
-var twilio = require('./twilio');
+// const icloud = require('./icloud');
+const ifttt = require('./ifttt');
+const twilio = require('./twilio');
+const notifier = require('node-notifier')
 require('dotenv').config();
 
-var googleMapsClient = require('@google/maps').createClient({key: process.env.API_KEY});
 
-// combined into both directions of travel
-var baseParams = {
-    mode: 'driving',
-    departure_time: new Date(),
-    traffic_model: 'best_guess'
-}
+/**
+ * Returns a formatted message with localized ETA
+ * @param localizedETA
+ * @returns {Promise.<string>}
+ */
+var composeMessage = localizedETA => {
+    var msg = process.env.MESSAGE;
+    var name = process.env.NAME
+    var assembledMessage = msg.replace('{{ETA}}', localizedETA).replace('{{NAME}}', name)
+    return Promise.resolve(assembledMessage);
+};
 
-var composeMessage = eta => process.env.MESSAGE.replace('{{ETA}}', eta).replace('{{NAME}}', process.env.NAME);
+var googleMapsClient = require('@google/maps').createClient({key: process.env.MAPS_API_KEY});
 
-var requestAndNotifyETA = (from, to) => {
-    baseParams.origins = [from];
-    baseParams.destinations = [to];
+/**
+ * uses the google distance matrix API to determine ETA using best-guess routing
+ * @param from
+ * @param to
+ * @returns {Promise}
+ */
+var requestETA = (from, to)=>{
+    var requestObj = {
+        origins: [from],
+        destinations: [to],
+        mode: 'driving',
+        departure_time: new Date(),
+        traffic_model: 'best_guess'
+    }
 
-    return new Promise((resolve, reject) =>{
-        googleMapsClient.distanceMatrix(baseParams, (err, response) => {
+    return new Promise((resolve, reject) => {
+        googleMapsClient.distanceMatrix(requestObj, (err, response)=>{
             if(err){
-                console.error(err)
-                reject(err);
+                reject(err)
             } else {
-                var etaResponse = Promise.resolve(response.json.rows[0].elements[0].duration_in_traffic.value);
-                etaResponse.then(composedResponse => {
-                    // add the value (in seconds) to current time, format to localized time
-                    return moment().add(composedResponse, 'seconds').format('LT');
-                }).then(composedMessage=>{
-                    console.log('composing message...')
-                    return composeMessage(composedMessage);
-                }).then(message => {
-                    twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
-                    console.log(`twilio notified...`)
-                    return message
-                // }).then(message=>{
-                //     icloud.notify(process.env.ICLOUD_DEVICE_ID, message)
-                //     console.log(`icloud notified...`)
-                }).then(etaResponse).then(response=>{
-                    console.log(`message is:: '${response}'`)
-                    ifttt.notify(response)
-                    console.log(`IFTTT notified...`)
-                    return response
-                }).then((response) => {
-                    resolve(response);
-                }).catch(err => {
-                    reject(err)
-                })
+                var timeInTraffic = response.json.rows[0].elements[0].duration_in_traffic.value;
+                resolve(timeInTraffic);
             }
         })
     })
 }
 
-var program = require('commander');
-program
-    .version('0.1')
-    .description('a CLI for announcing ETA to your loved one')
-    .option('-d, --direction <destination>', 'The direction you intend to travel in')
-    .parse(process.argv);
+/**
+ * gets the total minutes in traffic from seconds
+ * @param trafficSeconds
+ * @returns {Promise}
+ */
+var calcTrafficMinutes = trafficSeconds => Promise.resolve(moment.duration(trafficSeconds, 'seconds').minutes())
 
-if(program.direction){
-    let home = process.env.HOME_ADDRESS;
-    let work = process.env.WORK_ADDRESS;
-    var from, to;
+/**
+ * formats the ETA into an english message
+ * @param trafficTime
+ * @returns {Promise}
+ */
+var formatTime = trafficTime => Promise.resolve(moment().add(trafficTime, 'seconds').format('LT'))
 
-    if( program.direction == 'home'){
-        from = work, to = home;
-        console.log('work -> home')
-    } else if( program.direction == 'work'){
-        from = home, to = work;
-        console.log('home -> work')
+app.get('/from/:origin/to/:destination', (req, res)=>{
+    var dest = req.params.destination;
+    var origin = req.params.origin;
+    console.time('request')
+
+    if(dest != '' &&  origin != ''){
+        requestETA(origin, dest)
+            .then(calcTrafficMinutes)
+            .then(minutes=>{
+                ifttt.notify('traffic_time', minutes)
+            })
+            .then(formatTime)
+            .then(composeMessage)
+            .then((message)=>{
+                twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
+                ifttt.notify('eta', message)
+                return message
+            })
+            .then((message)=>{
+                res.send(`Generated ${new Date()} - '${message}'`)
+                console.timeEnd('request')
+            })
+            .catch(err=>{
+                res.status(500).send('everything is broken...', err);
+            })
     } else {
-        console.log('not a valid destination')
+        res.status(400).send('origin and destination is required')
     }
-
-    requestAndNotifyETA(from, to).then(response=>{
-        console.log(`Response sent, ETA process complete ::: ${new Date()}a`)
-        notifier.notify(response);
-    }).catch(err=> {
-        console.error(err)
-        notifier.notify(err);
-    });
-}
-
+})
+app.set('port', process.env.PORT || 3000);
+app.listen(app.get('port'), ()=>{
+    console.log(`listening on ${app.get('port')}`)
+})
