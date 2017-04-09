@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+
 const moment = require('moment');
 const request = require('request');
 
@@ -6,11 +6,9 @@ const express = require('express')
 const app = express();
 
 // notifiers
-// const icloud = require('./icloud');
 const ifttt = require('./ifttt');
 const twilio = require('./twilio');
 require('dotenv').config();
-
 
 /**
  * Returns a formatted message with localized ETA
@@ -42,7 +40,7 @@ var requestETA = (from, to)=>{
     }
 
     return new Promise((resolve, reject) => {
-        googleMapsClient.distanceMatrix(requestObj, (err, response)=>{
+        googleMapsClient.distanceMatrix(requestObj, (err, response) => {
             if(err){
                 reject(err)
             } else {
@@ -58,14 +56,18 @@ var requestETA = (from, to)=>{
  * @param trafficSeconds
  * @returns {Promise}
  */
-var calcTrafficMinutes = trafficSeconds => Promise.resolve(moment.duration(trafficSeconds, 'seconds').minutes())
+var calcTrafficMinutes = trafficSeconds => Promise.resolve(
+    moment.duration(trafficSeconds, 'seconds').minutes()
+)
 
 /**
  * formats the ETA into an english message
  * @param trafficTime
  * @returns {Promise}
  */
-var formatTime = trafficTime => Promise.resolve(moment().add(trafficTime, 'seconds').format('LT'))
+var formatTime = trafficTime => Promise.resolve(
+    moment().add(trafficTime, 'seconds').format('LT')
+)
 
 app.get('/from/:origin/to/:destination', (req, res)=>{
     var dest = req.params.destination;
@@ -75,21 +77,19 @@ app.get('/from/:origin/to/:destination', (req, res)=>{
     if(dest != '' &&  origin != ''){
         requestETA(origin, dest)
             .then(calcTrafficMinutes)
-            .then(minutes=>{
-                ifttt.notify('traffic_time', minutes)
-            })
+            .then(minutes => ifttt.notify('traffic_time', minutes))
             .then(formatTime)
             .then(composeMessage)
-            .then((message)=>{
+            .then((message) => {
                 twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
                 ifttt.notify('eta', message)
                 return message
             })
-            .then((message)=>{
+            .then((message) => {
                 res.send(`Generated ${new Date()} - '${message}'`)
                 console.timeEnd('request')
             })
-            .catch(err=>{
+            .catch(err => {
                 res.status(500).send('everything is broken...', err);
             })
     } else {

@@ -1,0 +1,16 @@
+sudo: false
+
+language: node_js
+
+node_js:
+  - "0.10"
+  - "0.11"
+  - "0.12"
+  - "iojs"
+  - "4.0"
+os:
+  - linux
+  # - osx -> cannot use NVM on OSX yet
+  # - windows -> cannot use windows on travis yet
+
+script: npm test
