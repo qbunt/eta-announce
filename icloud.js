@@ -7,7 +7,7 @@ var password = process.env.ICLOUD_PASS;
 var iCloud = new somebodyElsesComputer(email, password);
 
 module.exports.notify = (deviceID, message) => {
-    return new Promise((resolve, reject)=>{
+    return new Promise((resolve, reject) => {
         iCloud.getDevices((err, devices) => {
             if (err){
                 reject(err);
@@ -22,6 +22,6 @@ module.exports.notify = (deviceID, message) => {
                 console.log("Successfully alerted device!");
                 resolve(deviceID);
             });
-        });    
+        });
     })
 }

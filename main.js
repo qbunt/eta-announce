@@ -2,7 +2,7 @@
 const moment = require('moment');
 const request = require('request');
 
-const express = require('express')
+const express = require('express');
 const app = express();
 
 // notifiers
@@ -15,14 +15,14 @@ require('dotenv').config();
  * @param localizedETA
  * @returns {Promise.<string>}
  */
-var composeMessage = localizedETA => {
+let composeMessage = localizedETA => {
     var msg = process.env.MESSAGE;
     var name = process.env.NAME
     var assembledMessage = msg.replace('{{ETA}}', localizedETA).replace('{{NAME}}', name)
     return Promise.resolve(assembledMessage);
 };
 
-var googleMapsClient = require('@google/maps').createClient({key: process.env.MAPS_API_KEY});
+let googleMapsClient = require('@google/maps').createClient({key: process.env.MAPS_API_KEY});
 
 /**
  * uses the google distance matrix API to determine ETA using best-guess routing
