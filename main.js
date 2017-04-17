@@ -1,14 +1,13 @@
 
 const moment = require('moment');
 const request = require('request');
-
 const express = require('express');
+require('dotenv').config();
+
 const app = express();
 
-// notifiers
 const ifttt = require('./ifttt');
 const twilio = require('./twilio');
-require('dotenv').config();
 
 /**
  * Returns a formatted message with localized ETA
@@ -31,11 +30,12 @@ let googleMapsClient = require('@google/maps').createClient({key: process.env.MA
  * @returns {Promise}
  */
 var requestETA = (from, to)=>{
+    let departureOffset = process.env.DEPARTURE_OFFSET_MINUTES || 0;
     var requestObj = {
         origins: [from],
         destinations: [to],
         mode: 'driving',
-        departure_time: new Date(),
+        departure_time: moment(new Date()).add(departureOffset).toDate(),
         traffic_model: 'best_guess'
     }
 
