@@ -31,11 +31,12 @@ let googleMapsClient = require('@google/maps').createClient({key: process.env.MA
  */
 var requestETA = (from, to)=>{
     let departureOffset = process.env.DEPARTURE_OFFSET_MINUTES || 0;
+    moment.tz.setDefault(process.env.DEPARTURE_TZ);
     var requestObj = {
         origins: [from],
         destinations: [to],
         mode: 'driving',
-        departure_time: moment(new Date()).tz(process.env.DEPARTURE_TZ).add(departureOffset).toDate(),
+        departure_time: moment(new Date()).add(departureOffset).toDate(),
         traffic_model: 'best_guess'
     }
 
