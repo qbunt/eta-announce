@@ -1,5 +1,5 @@
 "use strict";
-const moment = require('moment');
+const moment = require('moment-timezone');
 const request = require('request');
 const express = require('express');
 require('dotenv').config();
@@ -35,7 +35,7 @@ var requestETA = (from, to)=>{
         origins: [from],
         destinations: [to],
         mode: 'driving',
-        departure_time: moment(new Date()).add(departureOffset).toDate(),
+        departure_time: moment(new Date()).tz(process.env.DEPARTURE_TZ).add(departureOffset).toDate(),
         traffic_model: 'best_guess'
     }
 
