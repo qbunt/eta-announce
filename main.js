@@ -1,4 +1,4 @@
-
+"use strict";
 const moment = require('moment');
 const request = require('request');
 const express = require('express');

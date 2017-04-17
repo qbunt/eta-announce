@@ -1,3 +1,4 @@
+"use strict";
 require('dotenv').config()
 var client = require('twilio')(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 
