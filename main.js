@@ -29,14 +29,14 @@ let googleMapsClient = require('@google/maps').createClient({key: process.env.MA
  * @param to
  * @returns {Promise}
  */
-var requestETA = (from, to)=>{
+var requestETA = (from, to) => {
     let departureOffset = process.env.DEPARTURE_OFFSET_MINUTES || 0;
     moment.tz.setDefault(process.env.DEPARTURE_TZ);
     var requestObj = {
         origins: [from],
         destinations: [to],
         mode: 'driving',
-        departure_time: moment(new Date()).add(departureOffset).toDate(),
+        departure_time: moment().add(departureOffset).toDate(),
         traffic_model: 'best_guess'
     }
 
@@ -70,7 +70,7 @@ var formatTime = trafficTime => Promise.resolve(
     moment().add(trafficTime, 'seconds').format('LT')
 )
 
-app.get('/from/:origin/to/:destination', (req, res)=>{
+app.get('/from/:origin/to/:destination', (req, res) => {
     var dest = req.params.destination;
     var origin = req.params.origin;
     console.time('request')
@@ -85,8 +85,7 @@ app.get('/from/:origin/to/:destination', (req, res)=>{
                 twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
                 ifttt.notify('eta', message)
                 return message
-            })
-            .then((message) => {
+            }).then((message) => {
                 res.send(`Generated ${new Date()} - '${message}'`)
                 console.timeEnd('request')
             })
@@ -97,7 +96,8 @@ app.get('/from/:origin/to/:destination', (req, res)=>{
         res.status(400).send('origin and destination is required')
     }
 })
+
 app.set('port', process.env.PORT || 3000);
-app.listen(app.get('port'), ()=>{
+app.listen(app.get('port'), () => {
     console.log(`listening on ${app.get('port')}`)
 })
