@@ -66,7 +66,7 @@ var calcTrafficMinutes = trafficSeconds => Promise.resolve(
  * @returns {Promise}
  */
 var formatTime = trafficTime => Promise.resolve(
-    moment().add(trafficTime, 'minutes').format('LT')
+    moment().utcOffset(process.env.DEPARTURE_TZ).add(trafficTime, 'minutes').format('LT')
 )
 
 app.get('/from/:origin/to/:destination', (req, res)=>{
