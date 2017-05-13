@@ -1,13 +1,14 @@
 "use strict";
 const moment = require('moment');
 const request = require('request');
-const express = require('express');
-require('dotenv').config();
 
+const express = require('express');
 const app = express();
 
+// notifiers
 const ifttt = require('./ifttt');
 const twilio = require('./twilio');
+require('dotenv').config();
 
 /**
  * Returns a formatted message with localized ETA
@@ -37,7 +38,7 @@ var requestETA = (from, to)=>{
         mode: 'driving',
         departure_time: moment().utcOffset(process.env.DEPARTURE_TZ).add(departureOffset, 'm').toDate(),
         traffic_model: 'best_guess'
-    }
+    };
 
     return new Promise((resolve, reject) => {
         googleMapsClient.distanceMatrix(requestObj, (err, response) => {
@@ -72,33 +73,32 @@ var formatTime = trafficTime => Promise.resolve(
 app.get('/from/:origin/to/:destination', (req, res)=>{
     var dest = req.params.destination;
     var origin = req.params.origin;
-    console.time('request')
-
+    console.time('request');
+    var predictedMinutes;
     if(dest != '' &&  origin != ''){
         requestETA(origin, dest)
             .then(calcTrafficMinutes)
-            .then(minutes => {
-                ifttt.notify('traffic_time', minutes)
-                return minutes;
-            })
+            .then(minutes => { predictedMinutes = minutes })
             .then(formatTime)
             .then(composeMessage)
-            .then((message) => {
+            .then(message => {
                 twilio.notify(process.env.TWILIO_RECIPIENT_PHONE, message)
+                ifttt.notify('traffic_time', predictedMinutes)
                 ifttt.notify('eta', message)
                 return message
             })
-            .then((message) => {
+            .then(message => {
                 res.send(`Generated ${new Date()} - '${message}'`)
                 console.timeEnd('request')
             })
             .catch(err => {
                 res.status(500).send('everything is broken...', err);
-            })
+            });
     } else {
         res.status(400).send('origin and destination is required')
     }
-})
+});
+
 app.set('port', process.env.PORT || 3000);
 app.listen(app.get('port'), ()=>{
     console.log(`listening on ${app.get('port')}`)
